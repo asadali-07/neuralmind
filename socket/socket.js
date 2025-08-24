@@ -9,7 +9,7 @@ import { createMemory, queryMemory } from "../services/pinecone.service.js";
 export function createSocketServer(server) {
   const io = new Server(server, {
     cors: {
-      origin: "https://neuralmind-dbl0.onrender.com",
+      origin: "https://neuralmind.netlify.app",
       credentials: true,
     },
   });
