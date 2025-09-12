@@ -49,3 +49,21 @@ export async function generateVector(prompt) {
 
   return response.embeddings[0].values;
 }
+
+export async function llmClassify(prompt) {
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
+    config: {
+      temperature: 0.7,
+      maxOutputTokens: 5,
+      systemInstruction: "You are a classifier. Your task is to output only one of the two labels: web_search or general_chat. Do not provide explanations, reasoning, or any additional text—only return exactly one of the two labels.",
+    },
+  });
+  return response.text;
+}

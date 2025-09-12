@@ -2,6 +2,8 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
+const production = process.env.NODE_ENV === "production";
+
 export async function login(req, res) {
   const { email, password } = req.body;
 
@@ -17,9 +19,9 @@ export async function login(req, res) {
 
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
   res.cookie("token", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    httpOnly: production,
+    secure: production,
+    sameSite: production ? "None" : "Lax",
   });
 
   res.json({ user: { name: user.name, email: user.email } });
@@ -33,9 +35,9 @@ export async function register(req, res) {
 
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
   res.cookie("token", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    httpOnly: production,
+    secure: production,
+    sameSite: production ? "None" : "Lax",
   });
 
   res.json({ user: { name: user.name, email: user.email } });
@@ -52,9 +54,9 @@ export async function checkAuth(req, res) {
 
 export async function logout(_, res) {
   res.clearCookie("token", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    httpOnly: production,
+    secure: production,
+    sameSite: production ? "None" : "Lax",
   });
   res.json({ message: "Logged out successfully" });
 }

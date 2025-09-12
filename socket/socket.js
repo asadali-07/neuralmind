@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import { generateResponse, generateVector } from "../services/gemini.ai.js";
 import Message from "../models/message.model.js";
 import { createMemory, queryMemory } from "../services/pinecone.service.js";
+import { classifyPrompt, generateWebResponse } from "../services/tavily.ai.js";
+
 
 export function createSocketServer(server) {
   const io = new Server(server, {
@@ -32,6 +34,8 @@ export function createSocketServer(server) {
 
   io.on("connection", async (socket) => {
     console.log("Client connected");
+
+    let response = null;
 
     socket.on("ai-message", async (messagePayload) => {
       const [message, vectors] = await Promise.all([
@@ -86,7 +90,11 @@ export function createSocketServer(server) {
         },
       ];
 
-      const response = await generateResponse([...ltm, ...stm]);
+      // Decide if web search is needed
+      const intent = await classifyPrompt(messagePayload.content);
+
+      if (intent === "web_search") response = await generateWebResponse(messagePayload.content);
+      else response = await generateResponse([...ltm, ...stm]);
 
       socket.emit("ai-message-response", response);
 
@@ -95,9 +103,9 @@ export function createSocketServer(server) {
           chatId: messagePayload.chatId,
           userId: socket.user._id,
           role: "model",
-          content: response,
+          content: typeof response === "string" ? response : JSON.stringify(response),
         }),
-        generateVector(response),
+        generateVector(response.answer || response),
       ]);
 
       await createMemory({
@@ -106,7 +114,7 @@ export function createSocketServer(server) {
         metadata: {
           userId: socket.user._id,
           chatId: messagePayload.chatId,
-          content: response,
+          content: response.answer || response,
         },
       });
     });
