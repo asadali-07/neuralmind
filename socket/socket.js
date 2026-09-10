@@ -38,6 +38,7 @@ export function createSocketServer(server) {
     let response = null;
 
     socket.on("ai-message", async (messagePayload) => {
+      try {
       const [message, vectors] = await Promise.all([
         Message.create({
           chatId: messagePayload.chatId,
@@ -58,7 +59,7 @@ export function createSocketServer(server) {
         }),
         await Message.find({ chatId: messagePayload.chatId })
           .sort({ createdAt: -1 })
-          .limit(20)
+          .limit(10)
           .lean(),
       ]);
 
@@ -117,6 +118,11 @@ export function createSocketServer(server) {
           content: response.answer || response,
         },
       });
+      }
+      catch (error) {
+        console.error("Error processing message:", error);
+        socket.emit("ai-message-response", error.message || "An error occurred while processing your message.");
+      }
     });
 
     socket.on("disconnect", () => {
